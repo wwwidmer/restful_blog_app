@@ -24,6 +24,7 @@ def get_latest_post(request):
 	)
 	return response
 
+# TODO
 
 def get_all_posts(request, page=0):
 	timestamp = format_timestamp(datetime.utcnow())

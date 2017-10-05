@@ -1,52 +1,56 @@
-from django.shortcuts import render
 from django.http import HttpResponse, JsonResponse
-
-from datetime import datetime
-import json
+from django.views.decorators.csrf import csrf_exempt
+from django.shortcuts import render
+from rest_framework.renderers import JSONRenderer
+from rest_framework.parsers import JSONParser
+from restful_blog.models import Post
+from restful_blog.serializers import PostSerializer
 
 def index(request):
     return render(request, 'index.html')
 
 
-def format_timestamp(dt):
-	return dt.strftime('%d, %b, %Y')
+@csrf_exempt
+def post_detail(request, pk):
+	'''
+	CRUD operations for a single Post
+	'''
+	try:
+		post = Post.objects.get(pk=pk)
+	except Post.DoesNotExist:
+		return HttpResponse(status=404)
 
+	if request.method == 'GET':
+		serializer = PostSerializer(post)
+		return JsonResponse(serializer.data)
+	elif request.method == 'PUT':
+		data = JSONParser().parse(request)
+		serializer = PostSerializer(post, data=data)
 
-def get_latest_post(request):
-	timestamp = format_timestamp(datetime.utcnow())
-	response = JsonResponse(json.dumps({
-			'title': 'Test Title!',
-			'timestamp': timestamp,
-			'description': 'Wow! This is a description, but we\'ve got a lot more to say in the actual post!',
-			'thumbnail': 'https://deadlink.com',
-			'text': 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.'
-		}), safe=False
-	)
+		if serializer.is_valid():
+			serializer.save()
+			return JsonResponse(serializer.data)
+		return JsonResponse(serializer.errors, status=400)
+	elif request.method == 'DELETE':
+		post.delete()
+		return HttpResponse(status=204)
 	return response
 
-# TODO
 
-def get_all_posts(request, page=0):
-	timestamp = format_timestamp(datetime.utcnow())
-	response = JsonResponse(json.dumps({
-			'total': 2,
-			'page': page,
-			'posts': {
-				{
-					'title': 'Test Title!',
-					'timestamp': timestamp,
-					'description': 'Wow! This is a description, but we\'ve got a lot more to say in the actual post!',
-					'thumbnail': 'https://deadlink.com',
-					'text': 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.'
-				},
-				{
-					'title': 'Test, slightly older Title!',
-					'timestamp': timestamp,
-					'description': 'Wow! This is a description, but we\'ve got a lot more to say in the actual post!',
-					'thumbnail': 'https://deadlink.com',
-					'text': 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.'
-				},
-			}
-		}), safe=False
-	)
-	return response
+@csrf_exempt
+def post_list(request):
+	'''
+	List all Post objects or creates a new one.
+	'''
+	if request.method == 'GET':
+		posts = Post.objects.all()
+		serializer = PostSerializer(posts, many=True)
+		return JsonResponse(serializer.data, safe=False)
+	elif request.method == 'POST':
+		data = JSONParser().parse(request)
+		serializer = PostSerializer(data=data)
+		if serializer.is_valid():
+			serializer.save()
+			return JsonResponse(serializer.data, status=201)
+
+	return JsonResponse(serializer.errors, status=400)

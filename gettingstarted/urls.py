@@ -23,6 +23,7 @@ router.register(r'users', UserViewSet)
 
 urlpatterns = [
     url(r'^rest-api-test/', include(router.urls)),
+    url(r'^$', restful_blog.views.index, name='index'),
     url(r'^api/', include('restful_blog.urls')),
     url(r'^api-auth/', include('rest_framework.urls', namespace='rest_framework')),
     url(r'^admin/', include(admin.site.urls)),

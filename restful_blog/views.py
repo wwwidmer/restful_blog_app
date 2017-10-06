@@ -1,58 +1,30 @@
-from django.http import HttpResponse, JsonResponse
-from django.views.decorators.csrf import csrf_exempt
+from django.http import Http404
 from django.shortcuts import render
 
 from rest_framework import status
-from rest_framework.decorators import api_view
+from rest_framework.views import APIView
 from rest_framework.response import Response
+from rest_framework import mixins
+from rest_framework import generics
 
 from restful_blog.models import Post
 from restful_blog.serializers import PostSerializer
+
 
 def index(request):
     return render(request, 'index.html')
 
 
-@api_view(['GET', 'PUT', 'DELETE'])
-def post_detail(request, pk, format=None):
+class PostDetail(generics.RetrieveUpdateDestroyAPIView):
 	'''
 	CRUD operations for a single Post
 	'''
-	try:
-		post = Post.objects.get(pk=pk)
-	except Post.DoesNotExist:
-		return Response(status=status.HTTP_404_NOT_FOUND)
+	queryset = Post.objects.all()
+	serializer_class = PostSerializer
 
-	if request.method == 'GET':
-		serializer = PostSerializer(post)
-		return Response(serializer.data)
-	elif request.method == 'PUT':
-		serializer = PostSerializer(post, data=request.data)
-
-		if serializer.is_valid():
-			serializer.save()
-			return Response(serializer.data)
-		return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-	elif request.method == 'DELETE':
-		post.delete()
-		return Response(status=status.HTTP_204_NO_CONTENT)
-
-
-@api_view(['GET', 'POST'])
-def post_list(request, format=None):
+class PostList(generics.ListCreateAPIView):
 	'''
-	List all Post objects or creates a new one.
+	List all Post Objects or create one
 	'''
-	if request.method == 'GET':
-		posts = Post.objects.all()
-		serializer = PostSerializer(posts, many=True)
-		return Response(serializer.data)
-
-	elif request.method == 'POST':
-		serializer = PostSerializer(data=request.data)
-		if serializer.is_valid():
-			serializer.save()
-			return Response(serializer.data, status=status.HTTP_201_CREATED)
-
-		return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+	queryset = Post.objects.all()
+	serializer_class = PostSerializer

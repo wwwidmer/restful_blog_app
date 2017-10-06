@@ -8,6 +8,8 @@ class Post(models.Model):
 	description = models.CharField(max_length=300, blank=True, default='')
 	#thumbnail = 
 	text = models.CharField(max_length=2000, blank=True, default='')
+	owner = models.ForeignKey('auth.User', related_name='posts', on_delete=models.CASCADE)
 
 	class Meta:
 		ordering = ('created',)
+

@@ -9,6 +9,7 @@ from rest_framework import mixins
 from rest_framework import generics
 
 from restful_blog.models import Post
+from restful_blog.permissions import IsOwnerOrReadOnly
 from restful_blog.serializers import PostSerializer, UserSerializer
 
 
@@ -22,7 +23,7 @@ class PostDetail(generics.RetrieveUpdateDestroyAPIView):
 	'''
 	queryset = Post.objects.all()
 	serializer_class = PostSerializer
-	permission_classes = (permissions.IsAuthenticatedOrReadOnly,)
+	permission_classes = (permissions.IsAuthenticatedOrReadOnly, IsOwnerOrReadOnly,)
 
 class PostList(generics.ListCreateAPIView):
 	'''
